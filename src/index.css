@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  overflow: hidden;
+}
+
+body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+  background: #f5f7fb;
+}
+
+/* Popup container */
+.compact-popup {
+  width: 300px !important;
+  height: 250px !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* Remove extra default padding */
+.compact-popup .swal2-html-container {
+  margin: 4px 0 !important;
+  padding: 0 !important;
+}
+
+/* Reduce icon */
+.swal-small-icon {
+  width: 3rem !important;
+  height: 3rem !important;
+  margin: 0.2rem auto !important;
+}
+
+/* Reduce title */
+.swal-small-title {
+  font-size: 0.95rem !important;
+  margin: 0.2rem 0 !important;
+}
+
+/* Reduce text */
+.swal-small-text {
+  font-size: 0.5rem !important;
+  margin: 0.15rem 0 !important;
+}
+
+/* Buttons area */
+.compact-popup .swal2-actions {
+  margin-top: 4px !important;
+}
+
+/* Remove internal gaps */
+.compact-popup .swal2-popup {
+  gap: 2px !important;
+}
