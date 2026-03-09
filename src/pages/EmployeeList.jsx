@@ -111,7 +111,7 @@ export default function EmployeeList() {
           ← Back
         </button>
 
-        <div className="relative bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white overflow-hidden shadow-xl">
+        {/* <div className="relative bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white overflow-hidden shadow-xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48" />
           <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full -ml-40 -mb-40" />
           <div className="relative z-10">
@@ -123,9 +123,9 @@ export default function EmployeeList() {
               View and manage all team members
             </p>
           </div>
-        </div>
+        </div> */}
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex ml-30 -mt-15 flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="relative flex-1 md:flex-none md:w-96">
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
               🔍
