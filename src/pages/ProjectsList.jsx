@@ -1,4 +1,3 @@
-// Mobile-optimized ProjectsList.jsx (Desktop UI unchanged)
 import { useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +5,19 @@ import axios from "axios";
 import { BASE_URL } from "../config";
 import Swal from "sweetalert2";
 import ProjectForm from "../components/ProjectForm";
-import { getRoleFromToken } from "../utils/jwt";
+import { usePermissions } from "../context/PermissionContext";
+import { hasPermission } from "../utils/permissions";
+import {
+  ArrowLeft,
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  CalendarClock,
+  Users,
+  FolderPlus,
+  X,
+} from "lucide-react";
 
 export default function ProjectsList() {
   const [projects, setProjects] = useState([]);
@@ -17,7 +28,8 @@ export default function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState("All");
 
   const navigate = useNavigate();
-  const role = getRoleFromToken();
+  const { permissions } = usePermissions();
+  const can = (page, action) => hasPermission(permissions, page, action);
 
   const fetchProjects = async () => {
     try {
@@ -25,8 +37,12 @@ export default function ProjectsList() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setProjects(res.data.data);
-    } catch {
-      Swal.fire("Error", "Failed to load projects", "error");
+    } catch (err) {
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Failed to load projects",
+        "error",
+      );
     }
   };
 
@@ -49,8 +65,12 @@ export default function ProjectsList() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       fetchProjects();
-    } catch {
-      Swal.fire("Error", "Delete failed", "error");
+    } catch (err) {
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Delete failed",
+        "error",
+      );
     }
   };
 
@@ -74,8 +94,12 @@ export default function ProjectsList() {
         timer: 1200,
         showConfirmButton: false,
       });
-    } catch {
-      Swal.fire("Error", "Status update failed", "error");
+    } catch (err) {
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Status update failed",
+        "error",
+      );
     }
   };
 
@@ -86,7 +110,7 @@ export default function ProjectsList() {
   });
 
   const getStatusOptions = () => {
-    if (role === "Super Admin") {
+    if (can("projects", "create")) {
       return [
         "Pending",
         "Assigned",
@@ -99,98 +123,105 @@ export default function ProjectsList() {
         "Testing",
       ];
     }
-    if (role === "Employee") return ["In Progress", "Under Review"];
+    if (!can("projects", "update")) return ["In Progress", "Under Review"];
     return ["In Progress", "Completed", "On Hold"];
   };
 
   return (
     <PageLayout title="Projects">
       {/* TOP BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-xs sm:text-sm font-medium"
+          className="w-fit flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
         >
-          ← Back
+          <ArrowLeft size={16} /> Back
         </button>
 
-        {/* SEARCH + FILTER */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search by title..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-72 rounded-2xl border border-neutral-300 px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm focus:ring-2 focus:ring-blue-200 outline-none text-sm"
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search by title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-11 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+              />
+            </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full sm:w-56 rounded-2xl border border-neutral-300 px-4 py-2.5 sm:py-3 shadow-sm focus:ring-2 focus:ring-blue-200 outline-none bg-white text-sm"
-          >
-            <option value="All">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Assigned">Assigned</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Completed">Completed</option>
-            <option value="On Hold">On Hold</option>
-            <option value="Cancelled">Cancelled</option>
-            <option value="Coding">Coding</option>
-            <option value="Testing">Testing</option>
-          </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-48 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+            >
+              <option value="All">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Assigned">Assigned</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Coding">Coding</option>
+              <option value="Testing">Testing</option>
+            </select>
+          </div>
+
+          {can("projects", "create") && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-sm text-sm font-semibold transition-all"
+            >
+              <Plus size={18} /> Create Project
+            </button>
+          )}
         </div>
-
-        {role === "Super Admin" && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow text-sm"
-          >
-            + Create Project
-          </button>
-        )}
       </div>
 
       {/* PROJECT CARDS */}
       {filteredProjects.length === 0 ? (
-        <div className="bg-white border rounded-3xl shadow-sm py-16 sm:py-20 text-center">
-          <p className="text-lg sm:text-xl font-semibold text-neutral-700">
-            No Projects Yet
-          </p>
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm py-16 text-center">
+          <FolderPlus size={32} className="text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-400">No projects yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
           {filteredProjects.map((p) => (
             <div
               key={p._id}
               onClick={() => setSelectedProject(p)}
-              className="group relative bg-white rounded-3xl border border-neutral-200 p-4 sm:p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+              className="group relative bg-white rounded-2xl border border-gray-100 p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 to-indigo-500 opacity-70 group-hover:opacity-100 transition" />
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-linear-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition" />
 
               {/* HEADER */}
-              <div className="flex justify-between items-start mb-4 sm:mb-5 gap-3">
-                <div className="flex gap-3 sm:gap-4 items-center min-w-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-linear-to-br from-blue-200 to-indigo-400 text-white flex items-center justify-center text-lg sm:text-xl font-semibold shadow shrink-0">
+              <div className="flex justify-between items-start mb-4 gap-3">
+                <div className="flex gap-3 items-center min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm font-semibold shrink-0">
                     {p.title?.charAt(0)}
                   </div>
 
                   <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-neutral-800 group-hover:text-blue-600 transition truncate">
+                    <h3 className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition truncate">
                       {p.title}
                     </h3>
 
                     {p.deadline && (
-                      <span className="inline-block mt-1 text-[11px] sm:text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
-                        ⏳ {new Date(p.deadline).toLocaleDateString()}
+                      <span className="inline-flex items-center gap-1 mt-1 text-[11px] text-gray-400">
+                        <CalendarClock size={11} />{" "}
+                        {new Date(p.deadline).toLocaleDateString()}
                       </span>
                     )}
                   </div>
                 </div>
 
                 <span
-                  className={`text-[11px] sm:text-xs px-3 py-1 rounded-full font-semibold shadow-sm whitespace-nowrap
+                  className={`text-[11px] px-2.5 py-1 rounded-full font-semibold whitespace-nowrap
                     ${
                       p.status === "Pending"
                         ? "bg-yellow-100 text-yellow-700"
@@ -209,53 +240,53 @@ export default function ProjectsList() {
                 </span>
               </div>
 
-              <p className="text-xs sm:text-sm text-neutral-500 line-clamp-3 leading-relaxed">
+              <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
                 {p.description}
               </p>
 
-              <div className="mt-4 sm:mt-5 flex justify-between items-center">
+              <div className="mt-4 flex justify-between items-center">
                 <div className="flex -space-x-2">
                   {p.members?.slice(0, 4).map((m) => (
                     <div
                       key={m._id}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] sm:text-xs font-semibold border-2 border-white"
+                      className="w-7 h-7 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-[10px] font-semibold border-2 border-white"
                     >
                       {m.name.charAt(0)}
                     </div>
                   ))}
 
                   {p.members?.length > 4 && (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-neutral-200 text-neutral-600 flex items-center justify-center text-[10px] sm:text-xs border-2 border-white">
+                    <div className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px] border-2 border-white">
                       +{p.members.length - 4}
                     </div>
                   )}
                 </div>
 
-                <span className="text-[11px] sm:text-xs text-neutral-400">
-                  {p.members?.length || 0} members
+                <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <Users size={11} /> {p.members?.length || 0}
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 mt-5 sm:mt-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+              <div className="flex gap-2 mt-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingProject(p);
                   }}
-                  className="flex-1 px-4 py-2 rounded-xl border hover:bg-neutral-100 text-xs sm:text-sm"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-600 transition-colors"
                 >
-                  ✏ Edit
+                  <Pencil size={13} /> Edit
                 </button>
 
-                {role === "Super Admin" && (
+                {can("projects", "delete") && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteProject(p._id);
                     }}
-                    className="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 text-xs sm:text-sm"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs transition-colors"
                   >
-                    🗑 Delete
+                    <Trash2 size={13} /> Delete
                   </button>
                 )}
               </div>
@@ -281,8 +312,12 @@ export default function ProjectsList() {
                 Swal.fire("Success", "Project created", "success");
                 setShowCreate(false);
                 fetchProjects();
-              } catch {
-                Swal.fire("Error", "Create failed", "error");
+              } catch (err) {
+                Swal.fire(
+                  "Error",
+                  err.response?.data?.message || "Create failed",
+                  "error",
+                );
               }
             }}
           />
@@ -311,8 +346,12 @@ export default function ProjectsList() {
                 Swal.fire("Updated", "Project updated successfully", "success");
                 setEditingProject(null);
                 fetchProjects();
-              } catch {
-                Swal.fire("Error", "Update failed", "error");
+              } catch (err) {
+                Swal.fire(
+                  "Error",
+                  err.response?.data?.message || "Update failed",
+                  "error",
+                );
               }
             }}
           />
@@ -397,35 +436,33 @@ export default function ProjectsList() {
 /* REUSABLE MODAL WRAPPER */
 function ModalWrapper({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-2xl h-[92vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-fadeIn flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-fadeIn">
+      <div className="bg-white w-full sm:max-w-2xl h-[92vh] sm:h-auto sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-scaleIn flex flex-col">
         {/* HEADER */}
-        <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-5 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
+        <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex items-center justify-center font-semibold shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center font-semibold text-sm shrink-0">
               {title?.charAt(0)}
             </div>
-            <h2 className="text-base sm:text-lg font-semibold truncate">
-              {title}
-            </h2>
+            <h2 className="text-base font-semibold truncate">{title}</h2>
           </div>
 
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white text-xl"
+            className="text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors"
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         {/* BODY */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1">{children}</div>
 
         {/* FOOTER */}
-        <div className="px-5 sm:px-6 py-4 border-t bg-neutral-50 flex justify-end">
+        <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 text-sm"
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
           >
             Close
           </button>

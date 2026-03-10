@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { BASE_URL } from "../config";
 import Swal from "sweetalert2";
+import { X, Loader2 } from "lucide-react";
 
 export default function ProjectForm({ onSubmit, initialData = {} }) {
   const [form, setForm] = useState({
@@ -23,7 +24,13 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
         },
       })
       .then((res) => setEmployees(res.data.data))
-      .catch(() => Swal.fire("Error", "Failed to load employees", "error"));
+      .catch((err) =>
+        Swal.fire(
+          "Error",
+          err.response?.data?.message || "Failed to load employees",
+          "error",
+        ),
+      );
   }, []);
 
   /* PREFILL EDIT DATA (runs only once when modal opens) */
@@ -82,10 +89,10 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className="space-y-5">
       {/* TITLE */}
       <div>
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Project Title
         </label>
         <input
@@ -93,14 +100,14 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
           value={form.title}
           onChange={handleChange}
           required
-          className="w-full mt-1 rounded-xl border px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           placeholder="Enter project title"
         />
       </div>
 
       {/* DESCRIPTION */}
       <div>
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Description
         </label>
         <textarea
@@ -108,26 +115,28 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
           value={form.description}
           onChange={handleChange}
           rows="4"
-          className="w-full mt-1 rounded-xl border px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           placeholder="Project details..."
         />
       </div>
 
       {/* DEADLINE */}
       <div>
-        <label className="text-sm font-medium text-neutral-700">Deadline</label>
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Deadline
+        </label>
         <input
           type="date"
           name="deadline"
           value={form.deadline}
           onChange={handleChange}
-          className="w-full mt-1 rounded-xl border px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
         />
       </div>
 
       {/* MEMBERS */}
       <div>
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Assign Members
         </label>
 
@@ -137,7 +146,7 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
             addMember(e.target.value);
             e.target.value = "";
           }}
-          className="w-full mt-2 rounded-xl border px-3 py-2"
+          className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           defaultValue=""
         >
           <option value="" disabled>
@@ -160,23 +169,23 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
             return (
               <div
                 key={id}
-                className="flex items-center gap-2 bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-full text-sm shadow-sm"
+                className="flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-600 px-3 py-1.5 rounded-full text-xs font-medium"
               >
                 {/* Avatar */}
-                <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-semibold">
+                <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-semibold">
                   {emp.name?.charAt(0)}
                 </div>
 
                 {/* Name */}
-                <span className="font-medium">{emp.name}</span>
+                <span>{emp.name}</span>
 
                 {/* Remove */}
                 <button
                   type="button"
                   onClick={() => removeMember(id)}
-                  className="ml-1 w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-100 hover:text-red-600 transition"
+                  className="ml-0.5 text-blue-400 hover:text-red-500 transition-colors"
                 >
-                  ✕
+                  <X size={12} />
                 </button>
               </div>
             );
@@ -187,11 +196,16 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
       {/* SUBMIT */}
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition font-semibold"
+        className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={loading}
-        style={loading ? { opacity: 0.6, cursor: "not-allowed" } : {}}
       >
-        {loading ? "Saving..." : "Save Project"}
+        {loading ? (
+          <>
+            <Loader2 size={16} className="animate-spin" /> Saving...
+          </>
+        ) : (
+          "Save Project"
+        )}
       </button>
     </form>
   );

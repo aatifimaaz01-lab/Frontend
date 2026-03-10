@@ -5,10 +5,30 @@ import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import Swal from "sweetalert2";
 import EmployeeForm from "../components/EmployeeForm";
-import { getRoleFromToken } from "../utils/jwt";
+import { usePermissions } from "../context/PermissionContext";
+import { hasPermission } from "../utils/permissions";
+import {
+  Search,
+  UserPlus,
+  Eye,
+  Pencil,
+  Trash2,
+  FileText,
+  X,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Building2,
+  Briefcase,
+  IndianRupee,
+  Star,
+  Download,
+  UserX,
+} from "lucide-react";
 
 export default function EmployeeList() {
-  const role = getRoleFromToken();
+  const { permissions } = usePermissions();
+  const can = (page, action) => hasPermission(permissions, page, action);
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -35,16 +55,20 @@ export default function EmployeeList() {
           setShowOffer(true);
           setOfferUrl(url);
         });
-    } catch {
-      alert("Failed to generate offer letter");
+    } catch (err) {
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Failed to generate offer letter",
+        "error",
+      );
     }
   };
 
   useEffect(() => {
-    if (role?.trim().toLowerCase() === "employee") {
+    if (!hasPermission(permissions, "employees", "view")) {
       navigate("/profile");
     }
-  }, [navigate, role]);
+  }, [navigate, permissions]);
 
   const fetchEmployees = async () => {
     try {
@@ -55,8 +79,11 @@ export default function EmployeeList() {
       });
       setEmployees(res.data.data || []);
     } catch (err) {
-      console.error(err);
-      alert("Failed to load employees");
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Failed to load employees",
+        "error",
+      );
     }
   };
 
@@ -88,11 +115,12 @@ export default function EmployeeList() {
         },
       });
 
+      Swal.fire("Deleted!", "Employee deleted successfully", "success");
       fetchEmployees();
       setSelectedEmployee(null);
     } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Delete failed", "error");
+      const msg = err.response?.data?.message || "Failed to delete employee";
+      Swal.fire("Error", msg, "error");
     }
   };
 
@@ -103,137 +131,121 @@ export default function EmployeeList() {
   return (
     <PageLayout title="Employees">
       {/* HEADER */}
-      <div className="flex flex-col gap-5 mb-8">
+      <div className="flex flex-col gap-5 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="w-fit px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-sm font-medium transition"
+          className="w-fit flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
         >
-          ← Back
+          <ArrowLeft size={16} /> Back
         </button>
 
-        {/* <div className="relative bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full -ml-40 -mb-40" />
-          <div className="relative z-10">
-            <h3 className="text-sm font-bold text-white/80 uppercase tracking-widest">
-              Team Management
-            </h3>
-            <h2 className="text-3xl font-bold mt-2">Employees Directory</h2>
-            <p className="text-white/80 mt-1">
-              View and manage all team members
-            </p>
-          </div>
-        </div> */}
-
-        <div className="flex ml-30 -mt-15 flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="relative flex-1 md:flex-none md:w-96">
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
-              🔍
-            </span>
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               placeholder="Search employee by name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 pl-12 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pl-11 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white outline-none transition-all"
             />
           </div>
 
-          {role === "Super Admin" && (
+          {can("employees", "create") && (
             <button
               onClick={() => setShowAdd(true)}
-              className="
-    bg-linear-to-r from-green-600 to-emerald-600
-    text-white px-6 py-3 rounded-xl shadow-lg
-    hover:shadow-xl hover:scale-105
-    transition transform font-bold
-    flex items-center justify-center gap-2
-  "
+              className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 rounded-xl shadow-sm hover:shadow-md transition-all font-semibold flex items-center justify-center gap-2 text-sm"
             >
-              ➕ Add Employee
+              <UserPlus size={18} /> Add Employee
             </button>
           )}
         </div>
       </div>
 
       {/* TABLE */}
-      <div className="hidden md:block bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-linear-to-r from-blue-50 to-indigo-50 text-gray-700 border-b-2 border-gray-200">
+            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
               <tr>
-                <th className="text-left py-5 px-6 font-bold uppercase tracking-wide text-xs">
-                  👤 Employee
+                <th className="text-left py-4 px-6 font-semibold uppercase tracking-wider text-xs">
+                  Employee
                 </th>
-                <th className="text-left py-5 px-6 font-bold uppercase tracking-wide text-xs">
-                  📧 Email
+                <th className="text-left py-4 px-6 font-semibold uppercase tracking-wider text-xs">
+                  Email
                 </th>
-                <th className="text-left py-5 px-6 font-bold uppercase tracking-wide text-xs">
-                  🏢 Department
+                <th className="text-left py-4 px-6 font-semibold uppercase tracking-wider text-xs">
+                  Department
                 </th>
-                <th className="text-right py-5 px-6 font-bold uppercase tracking-wide text-xs">
-                  ⚡ Actions
+                <th className="text-right py-4 px-6 font-semibold uppercase tracking-wider text-xs">
+                  Actions
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {filtered.map((emp) => (
                 <tr
                   key={emp._id}
-                  className="border-b hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 transition group"
+                  className="hover:bg-gray-50/50 transition-colors"
                 >
-                  <td className="py-5 px-6 font-bold text-gray-800">
-                    {emp.name}
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-semibold text-sm">
+                        {emp.name?.charAt(0)}
+                      </div>
+                      <span className="font-semibold text-gray-800">
+                        {emp.name}
+                      </span>
+                    </div>
                   </td>
-                  <td className="py-5 px-6 text-gray-600">{emp.email}</td>
-                  <td className="py-5 px-6">
-                    <span className="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-xs font-bold">
+                  <td className="py-4 px-6 text-gray-500">{emp.email}</td>
+                  <td className="py-4 px-6">
+                    <span className="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
                       {emp.Department}
                     </span>
                   </td>
 
-                  <td className="py-5 px-6 text-right">
-                    <div className="flex justify-end gap-2">
-                      {/* OFFER LETTER */}
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex justify-end gap-1.5">
                       <button
                         onClick={() => getOfferLetter(emp._id)}
-                        className="p-2 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 hover:scale-110 transition shadow-sm font-bold text-xs title='Offer Letter"
+                        className="p-2 rounded-lg text-violet-600 hover:bg-violet-50 transition-colors"
                         title="Offer Letter"
                       >
-                        📄
+                        <FileText size={16} />
                       </button>
 
-                      {/* VIEW */}
                       <button
                         onClick={() => setSelectedEmployee(emp)}
-                        className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-110 transition shadow-sm font-bold text-xs"
+                        className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
                         title="View Details"
                       >
-                        👁️
+                        <Eye size={16} />
                       </button>
 
-                      {role === "Super Admin" && (
-                        <>
-                          {/* EDIT */}
-                          <button
-                            onClick={() => {
-                              setEditEmployee(emp);
-                              setShowEdit(true);
-                            }}
-                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 hover:scale-110 transition shadow-sm font-bold text-xs"
-                            title="Edit"
-                          >
-                            ✏️
-                          </button>
+                      {can("employees", "update") && (
+                        <button
+                          onClick={() => {
+                            setEditEmployee(emp);
+                            setShowEdit(true);
+                          }}
+                          className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
 
-                          {/* DELETE */}
-                          <button
-                            onClick={() => deleteEmployee(emp._id)}
-                            className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:scale-110 transition shadow-sm font-bold text-xs"
-                            title="Delete"
-                          >
-                            🗑️
-                          </button>
-                        </>
+                      {can("employees", "delete") && (
+                        <button
+                          onClick={() => deleteEmployee(emp._id)}
+                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       )}
                     </div>
                   </td>
@@ -244,72 +256,69 @@ export default function EmployeeList() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">😔 No employees found</p>
+          <div className="text-center py-16">
+            <UserX size={32} className="text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">No employees found</p>
           </div>
         )}
       </div>
       {/* MOBILE CARDS */}
-      <div className="md:hidden space-y-4">
+      <div className="md:hidden space-y-3 stagger-children">
         {filtered.map((emp) => (
           <div
             key={emp._id}
-            className="bg-linear-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden"
           >
-            <div className="p-5">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg">
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-semibold text-sm">
                   {emp.name?.charAt(0)}
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-lg">{emp.name}</p>
-                  <p className="text-xs text-gray-500">{emp.email}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm truncate">
+                    {emp.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">{emp.email}</p>
                 </div>
-              </div>
-
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-xs text-gray-600 font-medium mb-1">
-                  Department
-                </p>
-                <p className="text-sm font-bold text-blue-700">
+                <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0">
                   {emp.Department}
-                </p>
+                </span>
               </div>
 
               <div className="flex gap-2">
                 <button
                   onClick={() => getOfferLetter(emp._id)}
-                  className="flex-1 bg-purple-50 text-purple-600 py-2 rounded-lg text-xs hover:bg-purple-100 transition font-bold border border-purple-200"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-violet-50 text-violet-600 py-2 rounded-lg text-xs hover:bg-violet-100 transition-colors font-medium"
                 >
-                  📄 Offer
+                  <FileText size={14} /> Offer
                 </button>
 
                 <button
                   onClick={() => setSelectedEmployee(emp)}
-                  className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs hover:bg-blue-100 transition font-bold border border-blue-200"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs hover:bg-blue-100 transition-colors font-medium"
                 >
-                  👁️ View
+                  <Eye size={14} /> View
                 </button>
 
-                {role === "Super Admin" && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setEditEmployee(emp);
-                        setShowEdit(true);
-                      }}
-                      className="flex-1 bg-green-50 text-green-600 py-2 rounded-lg text-xs hover:bg-green-100 transition font-bold border border-green-200"
-                    >
-                      ✏️ Edit
-                    </button>
+                {can("employees", "update") && (
+                  <button
+                    onClick={() => {
+                      setEditEmployee(emp);
+                      setShowEdit(true);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-600 py-2 rounded-lg text-xs hover:bg-emerald-100 transition-colors font-medium"
+                  >
+                    <Pencil size={14} /> Edit
+                  </button>
+                )}
 
-                    <button
-                      onClick={() => deleteEmployee(emp._id)}
-                      className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-xs hover:bg-red-100 transition font-bold border border-red-200"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </>
+                {can("employees", "delete") && (
+                  <button
+                    onClick={() => deleteEmployee(emp._id)}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 text-red-600 py-2 rounded-lg text-xs hover:bg-red-100 transition-colors font-medium"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
                 )}
               </div>
             </div>
@@ -317,79 +326,95 @@ export default function EmployeeList() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">😔 No employees found</p>
+          <div className="text-center py-16">
+            <UserX size={32} className="text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">No employees found</p>
           </div>
         )}
       </div>
       {/* VIEW MODAL */}
       {selectedEmployee && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scaleIn">
             {/* HEADER */}
-            <div className="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-8 sticky top-0">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white p-6 sticky top-0 z-10">
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold shadow-lg">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-bold backdrop-blur">
                     {selectedEmployee.name?.charAt(0)}
                   </div>
 
                   <div>
-                    <h2 className="text-2xl font-bold">
+                    <h2 className="text-xl font-bold">
                       {selectedEmployee.name}
                     </h2>
-                    <p className="text-white/80 text-sm">
-                      📧 {selectedEmployee.email}
-                    </p>
-                    <p className="text-white/70 text-xs mt-1">
-                      🏢 {selectedEmployee.Department} | 💼{" "}
-                      {selectedEmployee.Designation}
-                    </p>
+                    <div className="flex items-center gap-1.5 text-blue-100 text-sm mt-1">
+                      <Mail size={14} /> {selectedEmployee.email}
+                    </div>
+                    <div className="flex items-center gap-3 text-blue-200 text-xs mt-1">
+                      <span className="flex items-center gap-1">
+                        <Building2 size={12} /> {selectedEmployee.Department}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Briefcase size={12} /> {selectedEmployee.Designation}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* CLOSE BUTTON */}
                 <button
                   onClick={() => setSelectedEmployee(null)}
-                  className="text-white hover:bg-white/20 rounded-lg p-2 transition w-10 h-10 flex items-center justify-center text-xl"
+                  className="text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
                 >
-                  ✕
+                  <X size={20} />
                 </button>
               </div>
             </div>
 
             {/* BODY */}
-            <div className="p-8 space-y-6">
+            <div className="p-6 space-y-6">
               {/* CONTACT INFO */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  📞 Contact Information
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Phone size={16} className="text-gray-400" /> Contact
+                  Information
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Info label="📱 Phone" value={selectedEmployee.phone_no} />
+                <div className="grid md:grid-cols-2 gap-3">
                   <Info
-                    label="💼 Designation"
+                    label="Phone"
+                    value={selectedEmployee.phone_no}
+                    icon={<Phone size={14} />}
+                  />
+                  <Info
+                    label="Designation"
                     value={selectedEmployee.Designation}
+                    icon={<Briefcase size={14} />}
                   />
                   <Info
-                    label="💰 Salary"
+                    label="Salary"
                     value={`₹${selectedEmployee.salary?.toLocaleString()}`}
+                    icon={<IndianRupee size={14} />}
                   />
-                  <Info label="📧 Email" value={selectedEmployee.email} />
+                  <Info
+                    label="Email"
+                    value={selectedEmployee.email}
+                    icon={<Mail size={14} />}
+                  />
                 </div>
               </div>
 
               {/* SKILLS */}
               {selectedEmployee.skills?.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    ⭐ Skills & Expertise
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Star size={16} className="text-gray-400" /> Skills &
+                    Expertise
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedEmployee.skills.map((s, i) => (
                       <span
                         key={i}
-                        className="bg-linear-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md"
+                        className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold"
                       >
                         {s}
                       </span>
@@ -400,58 +425,60 @@ export default function EmployeeList() {
             </div>
 
             {/* FOOTER */}
-            <div className="flex justify-end items-center p-6 border-t bg-gray-50 gap-3 sticky bottom-0">
+            <div className="flex justify-end items-center p-4 border-t border-gray-100 gap-2 sticky bottom-0 bg-white">
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold transition"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
               >
                 Close
               </button>
 
-              {role === "Super Admin" && (
-                <>
-                  <button
-                    onClick={() => {
-                      setEditEmployee(selectedEmployee);
-                      setShowEdit(true);
-                      setSelectedEmployee(null);
-                    }}
-                    className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition"
-                  >
-                    ✏️ Edit
-                  </button>
+              {can("employees", "update") && (
+                <button
+                  onClick={() => {
+                    setEditEmployee(selectedEmployee);
+                    setShowEdit(true);
+                    setSelectedEmployee(null);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors"
+                >
+                  <Pencil size={14} /> Edit
+                </button>
+              )}
 
-                  <button
-                    onClick={() => {
-                      deleteEmployee(selectedEmployee._id);
-                      setSelectedEmployee(null);
-                    }}
-                    className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold transition"
-                  >
-                    🗑️ Delete
-                  </button>
-                </>
+              {can("employees", "delete") && (
+                <button
+                  onClick={() => {
+                    deleteEmployee(selectedEmployee._id);
+                    setSelectedEmployee(null);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
               )}
             </div>
           </div>
         </div>
       )}
-      {/* ADD MODAL (unchanged logic) */}
+      {/* ADD MODAL */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl">
-            <div className="bg-linear-to-r from-green-600 to-emerald-600 text-white p-8 flex justify-between items-center sticky top-0">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl animate-scaleIn">
+            <div className="bg-linear-to-r from-emerald-600 to-teal-600 text-white p-6 flex justify-between items-center sticky top-0 z-10">
               <div>
-                <h2 className="text-2xl font-bold">➕ Add New Employee</h2>
-                <p className="text-white/80 text-sm mt-1">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <UserPlus size={20} /> Add New Employee
+                </h2>
+                <p className="text-white/70 text-sm mt-1">
                   Fill in the details to add a new team member
                 </p>
               </div>
               <button
                 onClick={() => setShowAdd(false)}
-                className="text-white hover:bg-white/20 rounded-lg p-2 transition w-10 h-10 flex items-center justify-center text-xl"
+                className="text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -490,8 +517,12 @@ export default function EmployeeList() {
                     );
                     setShowAdd(false);
                     fetchEmployees();
-                  } catch {
-                    Swal.fire("Error", "Failed to add employee", "error");
+                  } catch (err) {
+                    Swal.fire(
+                      "Error",
+                      err.response?.data?.message || "Failed to add employee",
+                      "error",
+                    );
                   }
                 }}
               />
@@ -501,20 +532,22 @@ export default function EmployeeList() {
       )}
       {/* EDIT EMPLOYEE MODAL */}
       {showEdit && editEmployee && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl">
-            <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white p-8 flex justify-between items-center sticky top-0">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl animate-scaleIn">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center sticky top-0 z-10">
               <div>
-                <h2 className="text-2xl font-bold">✏️ Edit Employee</h2>
-                <p className="text-white/80 text-sm mt-1">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Pencil size={20} /> Edit Employee
+                </h2>
+                <p className="text-white/70 text-sm mt-1">
                   Update {editEmployee.name}'s information
                 </p>
               </div>
               <button
                 onClick={() => setShowEdit(false)}
-                className="text-white hover:bg-white/20 rounded-lg p-2 transition w-10 h-10 flex items-center justify-center text-xl"
+                className="text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -558,8 +591,12 @@ export default function EmployeeList() {
                     setShowEdit(false);
                     setEditEmployee(null);
                     fetchEmployees();
-                  } catch {
-                    Swal.fire("Error", "Update failed", "error");
+                  } catch (err) {
+                    Swal.fire(
+                      "Error",
+                      err.response?.data?.message || "Update failed",
+                      "error",
+                    );
                   }
                 }}
               />
@@ -568,24 +605,24 @@ export default function EmployeeList() {
         </div>
       )}
       {showOffer && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-4xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scaleIn">
             {/* Header */}
-            <div className="bg-linear-to-r from-purple-600 to-indigo-600 text-white px-8 py-6 flex justify-between items-center border-b">
+            <div className="bg-linear-to-r from-violet-600 to-indigo-600 text-white px-6 py-5 flex justify-between items-center border-b">
               <div>
-                <h2 className="font-bold text-2xl flex items-center gap-2">
-                  📄 Offer Letter
+                <h2 className="font-bold text-lg flex items-center gap-2">
+                  <FileText size={20} /> Offer Letter
                 </h2>
-                <p className="text-white/80 text-sm mt-1">
+                <p className="text-white/70 text-sm mt-0.5">
                   Employee offer letter document
                 </p>
               </div>
 
               <button
                 onClick={() => setShowOffer(false)}
-                className="text-white hover:bg-white/20 rounded-lg p-2 transition w-10 h-10 flex items-center justify-center text-xl"
+                className="text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
@@ -597,19 +634,19 @@ export default function EmployeeList() {
             />
 
             {/* Footer */}
-            <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+            <div className="p-4 border-t border-gray-100 flex justify-end gap-2">
               <button
                 onClick={() => setShowOffer(false)}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold transition"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
               >
                 Close
               </button>
               <a
                 href={offerUrl}
                 download="OfferLetter.pdf"
-                className="px-6 py-2 bg-linear-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition font-bold"
+                className="flex items-center gap-1.5 px-4 py-2 bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
               >
-                💾 Download PDF
+                <Download size={14} /> Download PDF
               </a>
             </div>
           </div>
@@ -619,13 +656,14 @@ export default function EmployeeList() {
   );
 }
 
-function Info({ label, value }) {
+function Info({ label, value, icon }) {
   return (
-    <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-      <p className="text-xs text-gray-600 font-bold uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <p className="font-bold text-gray-900 text-lg">{value || "—"}</p>
+    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+      <div className="flex items-center gap-1.5 mb-1">
+        {icon && <span className="text-gray-400">{icon}</span>}
+        <p className="text-xs text-gray-500 font-medium">{label}</p>
+      </div>
+      <p className="font-semibold text-gray-900 text-sm">{value || "—"}</p>
     </div>
   );
 }

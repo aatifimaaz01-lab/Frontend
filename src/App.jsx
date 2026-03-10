@@ -13,6 +13,7 @@ import MyProjects from "./pages/MyProjects";
 import Reports from "./pages/Report";
 import LoggedInEmployees from "./pages/LoggedInEmployees";
 import AdminLogs from "./pages/AdminLogs";
+import RoleManagement from "./pages/RoleManagement";
 
 export default function App() {
   return (
@@ -51,10 +52,6 @@ export default function App() {
           }
         />
 
-
-
-
-
         <Route
           path="/admin/logs"
           element={
@@ -64,15 +61,12 @@ export default function App() {
           }
         />
 
-
-
         <Route path="/set-password/:token" element={<SetPassword />} />
-
 
         <Route
           path="/employeelist"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute page="employees" action="view">
               <EmployeeList />
             </ProtectedRoute>
           }
@@ -99,8 +93,17 @@ export default function App() {
         <Route
           path="/logged-in-employees"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute page="employee_status" action="view">
               <LoggedInEmployees />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute page="roles" action="view">
+              <RoleManagement />
             </ProtectedRoute>
           }
         />

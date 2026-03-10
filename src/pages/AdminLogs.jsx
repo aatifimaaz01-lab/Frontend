@@ -2,6 +2,14 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
+import {
+  Search,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  ScrollText,
+} from "lucide-react";
 
 export default function AdminLogs() {
   const [logs, setLogs] = useState([]);
@@ -124,21 +132,27 @@ export default function AdminLogs() {
 
   return (
     <PageLayout title="System Logs">
-      <div className="w-full bg-white shadow-md rounded-xl border overflow-hidden h-[calc(100vh-4rem)] flex flex-col">
+      <div className="w-full bg-white shadow-sm rounded-2xl border border-gray-100 overflow-hidden h-[calc(100vh-4rem)] flex flex-col">
         {/* ================= FILTER BAR ================= */}
-        <div className="p-4 border-b grid md:grid-cols-5 gap-3 sticky top-0 bg-white z-20 shadow-sm">
-          <input
-            type="text"
-            placeholder="Search logs..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-indigo-400 focus:outline-none"
-          />
+        <div className="p-4 border-b border-gray-100 grid md:grid-cols-5 gap-3 sticky top-0 bg-white z-20">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              placeholder="Search logs..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+            />
+          </div>
 
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           >
             <option value="">All Types</option>
             <option value="error">Error</option>
@@ -151,82 +165,86 @@ export default function AdminLogs() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           />
 
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none"
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           />
 
           <button
             onClick={exportToCSV}
-            className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-indigo-700 transition shadow-sm"
+            className="flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm hover:from-blue-700 hover:to-indigo-700 transition shadow-sm font-medium"
           >
-            Export CSV
+            <Download size={16} /> Export CSV
           </button>
         </div>
 
         {/* ================= TABLE ================= */}
         <div className="flex-1 overflow-auto">
           {loading && (
-            <div className="text-center py-10 text-gray-500 text-sm">
-              Loading logs...
+            <div className="flex items-center justify-center gap-2 py-10 text-gray-400 text-sm">
+              <Loader2 size={16} className="animate-spin" /> Loading logs...
             </div>
           )}
 
           {!loading && logs.length > 0 && (
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-50 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm">
+              <thead className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left">Time</th>
-                  <th className="px-4 py-3 text-left">Type</th>
-                  <th className="px-4 py-3 text-left">Message</th>
-                  <th className="px-4 py-3 text-left">Method</th>
-                  <th className="px-4 py-3 text-left">URL</th>
-                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold">Time</th>
+                  <th className="px-4 py-3 text-left font-semibold">Type</th>
+                  <th className="px-4 py-3 text-left font-semibold">Message</th>
+                  <th className="px-4 py-3 text-left font-semibold">Method</th>
+                  <th className="px-4 py-3 text-left font-semibold">URL</th>
+                  <th className="px-4 py-3 text-left font-semibold">Status</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {logs.map((log, index) => {
                   const meta = log.meta || {};
 
                   return (
                     <tr
                       key={log._id || index}
-                      className={`hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
+                      className={`hover:bg-blue-50/50 transition-colors ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
                       }`}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>
 
-                      <td
-                        className={`px-3 py-1 text-center text-sm font-medium ${getTypeColor(meta.type)}`}
-                      >
-                        {meta.type || "system"}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${getTypeColor(meta.type)}`}
+                        >
+                          {meta.type || "system"}
+                        </span>
                       </td>
 
-                      <td className="px-4 py-3 whitespace-pre-wrap wrap-break-words max-w-2xl">
+                      <td className="px-4 py-3 whitespace-pre-wrap wrap-break-words max-w-2xl text-xs text-gray-700">
                         {meta.message || "-"}
                       </td>
 
-                      <td className="px-4 py-3 text-indigo-600">
+                      <td className="px-4 py-3 text-indigo-600 text-xs font-medium">
                         {meta.method || "-"}
                       </td>
 
-                      <td className="px-4 py-3 wrap-break-words max-w-xl text-gray-500">
+                      <td className="px-4 py-3 wrap-break-words max-w-xl text-gray-400 text-xs">
                         {meta.url || "-"}
                       </td>
 
-                      <td
-                        className={`px-3 py-1 text-center text-sm font-medium ${getStatusColor(meta.status)}`}
-                      >
-                        {meta.status || "-"}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${getStatusColor(meta.status)}`}
+                        >
+                          {meta.status || "-"}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -236,33 +254,34 @@ export default function AdminLogs() {
           )}
 
           {!loading && logs.length === 0 && (
-            <div className="text-center py-10 text-gray-500 text-sm">
-              No logs found.
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <ScrollText size={32} className="mb-3 text-gray-300" />
+              <p className="text-sm">No logs found.</p>
             </div>
           )}
         </div>
 
         {/* ================= PAGINATION ================= */}
         {!loading && (
-          <div className="flex justify-between items-center px-5 py-4 border-t">
+          <div className="flex justify-between items-center px-5 py-3.5 border-t border-gray-100">
             <button
               onClick={() => fetchLogs(page - 1)}
               disabled={page === 1}
-              className="px-4 py-1.5 text-sm border rounded-lg hover:bg-gray-100 disabled:opacity-40 transition"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors font-medium"
             >
-              ← Previous
+              <ChevronLeft size={16} /> Previous
             </button>
 
-            <span className="text-sm text-gray-600">
+            <span className="text-xs text-gray-500">
               Page {page} of {totalPages}
             </span>
 
             <button
               onClick={() => fetchLogs(page + 1)}
               disabled={page === totalPages}
-              className="px-4 py-1.5 text-sm border rounded-lg hover:bg-gray-100 disabled:opacity-40 transition"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors font-medium"
             >
-              Next →
+              Next <ChevronRight size={16} />
             </button>
           </div>
         )}

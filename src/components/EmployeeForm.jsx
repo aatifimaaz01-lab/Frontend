@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { BASE_URL } from "../config";
+import { ArrowLeft, Plus, X, Upload, Loader2 } from "lucide-react";
 
 export default function EmployeeForm({ onSubmit, initialData = {} }) {
   const [form, setForm] = useState({
@@ -15,6 +17,29 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
     ...initialData,
   });
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    // Fetch available roles for designation dropdown
+    const fetchRoles = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${BASE_URL}/api/roles`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) setRoles(data.roles);
+      } catch {
+        // Fall back to defaults if roles can't be fetched
+        setRoles([
+          { name: "Super Admin" },
+          { name: "Admin" },
+          { name: "Employee" },
+        ]);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
@@ -36,6 +61,9 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const emailTimer = useRef(null);
 
   const addSkill = () => {
     if (!skillInput.trim()) return;
@@ -62,6 +90,40 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+
+    // Real-time email check
+    if (e.target.name === "email") {
+      const email = e.target.value;
+      setEmailExists(false);
+
+      if (emailTimer.current) clearTimeout(emailTimer.current);
+
+      if (email && email.includes("@")) {
+        setCheckingEmail(true);
+        emailTimer.current = setTimeout(async () => {
+          try {
+            const token = localStorage.getItem("token");
+            const res = await axios.get(
+              `${BASE_URL}/api/employees/check-email`,
+              {
+                params: { email },
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            );
+            // Don't flag if editing the same employee's email
+            if (res.data.exists && email !== initialData?.email) {
+              setEmailExists(true);
+            }
+          } catch {
+            // silently fail
+          } finally {
+            setCheckingEmail(false);
+          }
+        }, 500);
+      } else {
+        setCheckingEmail(false);
+      }
+    }
   };
 
   const validate = () => {
@@ -69,6 +131,7 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
 
     if (!form.name) err.name = "Name is required";
     if (!form.email.includes("@")) err.email = "Valid email required";
+    if (emailExists) err.email = "This email is already registered";
     if (!form.salary) err.salary = "Salary is required";
 
     setErrors(err);
@@ -84,16 +147,15 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
   };
 
   return (
-    <form onSubmit={submit} className="grid md:grid-cols-2 gap-5">
+    <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
       {/* Name */}
       {initialData?._id && (
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="md:col-span-2 w-fit px-4 py-2 rounded-xl bg-neutral-200
-             hover:bg-neutral-300 text-sm font-medium"
+          className="md:col-span-2 w-fit flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
         >
-          ← Back
+          <ArrowLeft size={16} /> Back
         </button>
       )}
 
@@ -103,10 +165,12 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           value={form.name}
           onChange={handleChange}
           placeholder="Employee Name"
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-                     focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm
+                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
         />
-        <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+        {errors.name && (
+          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+        )}
       </div>
 
       {/* Email */}
@@ -116,10 +180,23 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           value={form.email}
           onChange={handleChange}
           placeholder="Email"
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-                     focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+          className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm
+                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all
+                     ${emailExists ? "border-red-400" : "border-gray-200"}`}
         />
-        <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+        {checkingEmail && (
+          <p className="text-gray-400 text-xs mt-1 flex items-center gap-1">
+            <Loader2 size={12} className="animate-spin" /> Checking email...
+          </p>
+        )}
+        {emailExists && (
+          <p className="text-red-500 text-xs mt-1">
+            This email is already registered
+          </p>
+        )}
+        {errors.email && !emailExists && (
+          <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+        )}
       </div>
 
       {/* Phone */}
@@ -128,8 +205,8 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
         value={form.phone_no}
         onChange={handleChange}
         placeholder="Phone Number"
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-                   focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm
+                   focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
       />
       {/* {!initialData?._id && (
         <input
@@ -149,8 +226,8 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
         required
         value={form.Department}
         onChange={handleChange}
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-             focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white"
+        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm
+             focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
       >
         <option value="">Select Department</option>
         <option value="IT">IT</option>
@@ -165,13 +242,15 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
         name="Designation"
         value={form.Designation}
         onChange={handleChange}
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-             focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white"
+        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm
+             focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
       >
         <option value="">Select Designation</option>
-        <option value="Super Admin">Super Admin</option>
-        <option value="Admin">Admin</option>
-        <option value="Employee">Employee</option>
+        {roles.map((r) => (
+          <option key={r.name} value={r.name}>
+            {r.name}
+          </option>
+        ))}
       </select>
 
       {/* Salary */}
@@ -181,14 +260,18 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           value={form.salary}
           onChange={handleChange}
           placeholder="Salary"
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm
-                     focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm
+                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
         />
-        <p className="text-red-500 text-xs mt-1">{errors.salary}</p>
+        {errors.salary && (
+          <p className="text-red-500 text-xs mt-1">{errors.salary}</p>
+        )}
       </div>
       {/* Skills Section */}
       <div className="md:col-span-2 space-y-2">
-        <label className="text-sm font-medium text-neutral-700">Skills</label>
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Skills
+        </label>
 
         {/* Input row */}
         <div className="flex gap-2">
@@ -196,8 +279,8 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
             value={skillInput}
             onChange={(e) => setSkillInput(e.target.value)}
             placeholder="Type a skill and press Add"
-            className="flex-1 rounded-xl border border-neutral-300 px-4 py-2 text-sm
-                 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+            className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm
+                 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -209,9 +292,9 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           <button
             type="button"
             onClick={addSkill}
-            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-medium transition-colors"
           >
-            Add
+            <Plus size={14} /> Add
           </button>
         </div>
 
@@ -220,15 +303,15 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           {form.skills.map((skill, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
+              className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium"
             >
               {skill}
               <button
                 type="button"
                 onClick={() => removeSkill(index)}
-                className="text-blue-500 hover:text-red-500"
+                className="text-blue-400 hover:text-red-500 transition-colors"
               >
-                ✕
+                <X size={12} />
               </button>
             </div>
           ))}
@@ -236,13 +319,12 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
       </div>
 
       {/* Profile Photo */}
-      {/* Profile Photo */}
       <div className="md:col-span-2">
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Profile Photo
         </label>
 
-        <div className="mt-2 border-2 border-dashed border-neutral-300 rounded-2xl p-5 text-center hover:border-blue-400 transition">
+        <div className="mt-2 border-2 border-dashed border-gray-200 rounded-xl p-5 text-center hover:border-blue-400 transition">
           <input
             type="file"
             name="profilePic"
@@ -252,22 +334,20 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
           />
 
           <label htmlFor="profileUpload" className="cursor-pointer block">
-            <p className="text-sm text-neutral-500">
+            <Upload size={20} className="text-gray-300 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">
               Click to upload or drag & drop
             </p>
-            <p className="text-xs text-neutral-400 mt-1">PNG, JPG up to 5MB</p>
+            <p className="text-[11px] text-gray-400 mt-1">PNG, JPG up to 5MB</p>
           </label>
 
-          {/* Preview */}
-          {/* Preview */}
-          {/* Preview */}
           {form.profilePic && (
             <img
-              className="mt-4 w-24 h-24 object-cover rounded-full mx-auto border"
+              className="mt-4 w-20 h-20 object-cover rounded-xl mx-auto border border-gray-200"
               src={
                 form.profilePic instanceof FileList
                   ? URL.createObjectURL(form.profilePic[0])
-                  : `http://localhost:5200/uploads/${form.profilePic}`
+                  : `${BASE_URL}/uploads/${form.profilePic}`
               }
               alt="Profile Preview"
             />
@@ -276,13 +356,12 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
       </div>
 
       {/* Documents */}
-      {/* Documents */}
       <div className="md:col-span-2">
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Documents
         </label>
 
-        <div className="mt-2 border-2 border-dashed border-neutral-300 rounded-2xl p-5 hover:border-blue-400 transition">
+        <div className="mt-2 border-2 border-dashed border-gray-200 rounded-xl p-5 hover:border-blue-400 transition">
           <input
             type="file"
             name="documents"
@@ -296,16 +375,15 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
             htmlFor="docsUpload"
             className="cursor-pointer block text-center"
           >
-            <p className="text-sm text-neutral-500">
+            <Upload size={20} className="text-gray-300 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">
               Click to upload documents or drag & drop
             </p>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               PDF, DOC, JPG allowed
             </p>
           </label>
 
-          {/* File list preview */}
-          {/* File list preview */}
           {form.documents?.length > 0 && (
             <div className="mt-4 space-y-2">
               {Array.from(form.documents).map((file, index) => {
@@ -314,7 +392,7 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
                 return (
                   <div
                     key={index}
-                    className="flex justify-between items-center bg-neutral-100 px-3 py-2 rounded-lg text-sm"
+                    className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg text-sm"
                   >
                     <a
                       href={
@@ -324,13 +402,13 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
                       }
                       target="_blank"
                       rel="noreferrer"
-                      className="truncate text-blue-600 hover:underline"
+                      className="truncate text-blue-600 hover:underline text-xs"
                     >
                       {isNewFile ? file.name : file.split("/").pop()}
                     </a>
 
                     {isNewFile && (
-                      <span className="text-xs text-neutral-500">
+                      <span className="text-[11px] text-gray-400">
                         {(file.size / 1024).toFixed(1)} KB
                       </span>
                     )}
@@ -345,11 +423,16 @@ export default function EmployeeForm({ onSubmit, initialData = {} }) {
       {/* Submit */}
       <button
         type="submit"
-        className="md:col-span-2 bg-blue-600 text-white py-3 rounded-2xl transition shadow-sm"
+        className="md:col-span-2 flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-sm font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={loading}
-        style={loading ? { opacity: 0.6, cursor: "not-allowed" } : {}}
       >
-        {loading ? "Saving..." : "Save Employee"}
+        {loading ? (
+          <>
+            <Loader2 size={16} className="animate-spin" /> Saving...
+          </>
+        ) : (
+          "Save Employee"
+        )}
       </button>
     </form>
   );

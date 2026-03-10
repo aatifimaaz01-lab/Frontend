@@ -2,146 +2,150 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
+import {
+  Users,
+  FolderKanban,
+  IndianRupee,
+  Building2,
+  Clock,
+  AlertTriangle,
+  Flame,
+  CheckCircle2,
+  CalendarClock,
+  TrendingUp,
+} from "lucide-react";
 
 export default function Dashboard() {
-  const [employees, setEmployees] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [summary, setSummary] = useState({
+    totalEmployees: 0,
+    totalProjects: 0,
+    totalSalary: 0,
+    departments: {},
+    projects: [],
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     axios
-      .get(`${BASE_URL}/api/employees/view`, {
+      .get(`${BASE_URL}/api/dashboard/summary`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setEmployees(res.data.data || []));
-
-    axios
-      .get(`${BASE_URL}/api/projects/all`, {
-        headers: { Authorization: `Bearer ${token}` },
+      .then((res) => {
+        if (res.data.success) setSummary(res.data.data);
       })
-      .then((res) => setProjects(res.data.data || []));
+      .catch(() => {});
   }, []);
 
-  const totalSalary = employees.reduce(
-    (sum, e) => sum + Number(e.salary || 0),
-    0,
-  );
-
-  const deptMap = {};
-  employees.forEach((e) => {
-    deptMap[e.Department] = (deptMap[e.Department] || 0) + 1;
-  });
-
-  const deptData = Object.entries(deptMap);
+  const deptData = Object.entries(summary.departments);
 
   return (
     <PageLayout title="Dashboard">
-      <div className="space-y-10">
+      <div className="space-y-8">
         {/* ---------- HERO SECTION ---------- */}
-        <div className="relative bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-10 text-white overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full -ml-40 -mb-40" />
+        <div className="relative bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-2xl p-8 md:p-10 text-white overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mt-40" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full -ml-32 -mb-32" />
           <div className="relative z-10">
-            <h3 className="text-sm font-bold text-white/80 uppercase tracking-widest">
-              Welcome to
-            </h3>
-            <h2 className="text-4xl font-bold mt-2">Dashboard Overview</h2>
-            <p className="text-white/80 mt-2">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={16} className="text-blue-200" />
+              <span className="text-xs font-semibold text-blue-200 uppercase tracking-widest">
+                Overview
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold">Dashboard</h2>
+            <p className="text-blue-100 mt-2 text-sm md:text-base">
               Manage employees, projects, and track key metrics
             </p>
           </div>
         </div>
 
         {/* ---------- STATS ---------- */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-5 stagger-children">
           <StatCard
             title="Total Employees"
-            value={employees.length}
-            subtitle={`${employees.length} team members`}
-            icon="👥"
+            value={summary.totalEmployees}
+            subtitle={`${summary.totalEmployees} team members`}
+            icon={Users}
             color="blue"
           />
           <StatCard
             title="Total Projects"
-            value={projects.length}
-            subtitle={`${projects.length} active projects`}
-            icon="📊"
+            value={summary.totalProjects}
+            subtitle={`${summary.totalProjects} active projects`}
+            icon={FolderKanban}
             color="purple"
           />
           <StatCard
             title="Total Salary"
-            value={`₹${totalSalary.toLocaleString()}`}
+            value={`₹${summary.totalSalary.toLocaleString()}`}
             subtitle="Monthly payroll"
-            icon="💰"
+            icon={IndianRupee}
             color="green"
           />
         </div>
 
         {/* ---------- DEPARTMENT ---------- */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-100 rounded-full blur-3xl opacity-30" />
-
-          <div className="flex items-center gap-3 mb-8 relative z-10">
-            <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg">
-              🏢
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Building2 size={18} className="text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-gray-900">
               Department Distribution
             </h2>
           </div>
 
           {deptData.length === 0 ? (
-            <p className="text-neutral-500 text-center py-8">
+            <p className="text-gray-400 text-center py-8 text-sm">
               No department data available
             </p>
           ) : (
-            <div className="space-y-7 relative z-10">
+            <div className="space-y-5">
               {deptData.map(([dept, count], idx) => {
                 const colors = [
                   {
-                    bar: "from-blue-500 to-indigo-600",
-                    badge: "bg-blue-100 text-blue-700",
+                    bar: "from-blue-500 to-blue-600",
+                    badge: "bg-blue-50 text-blue-700",
                   },
                   {
-                    bar: "from-purple-500 to-pink-600",
-                    badge: "bg-purple-100 text-purple-700",
+                    bar: "from-violet-500 to-purple-600",
+                    badge: "bg-violet-50 text-violet-700",
                   },
                   {
-                    bar: "from-green-500 to-emerald-600",
-                    badge: "bg-green-100 text-green-700",
+                    bar: "from-emerald-500 to-green-600",
+                    badge: "bg-emerald-50 text-emerald-700",
                   },
                   {
-                    bar: "from-orange-500 to-red-600",
-                    badge: "bg-orange-100 text-orange-700",
+                    bar: "from-amber-500 to-orange-600",
+                    badge: "bg-amber-50 text-amber-700",
                   },
                   {
-                    bar: "from-cyan-500 to-blue-600",
-                    badge: "bg-cyan-100 text-cyan-700",
+                    bar: "from-cyan-500 to-teal-600",
+                    badge: "bg-cyan-50 text-cyan-700",
                   },
                 ];
                 const color = colors[idx % colors.length];
-                const percentage = (count / employees.length) * 100;
+                const percentage = summary.totalEmployees
+                  ? (count / summary.totalEmployees) * 100
+                  : 0;
 
                 return (
-                  <div key={dept} className="group">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-semibold text-gray-800">
+                  <div key={dept}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-700 text-sm">
                         {dept}
                       </span>
                       <span
-                        className={`text-sm font-bold px-3 py-1 rounded-full ${color.badge}`}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${color.badge}`}
                       >
                         {count} ({percentage.toFixed(0)}%)
                       </span>
                     </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-sm">
+                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
-                        className={`bg-linear-to-r ${color.bar} h-3 rounded-full transition-all duration-700 group-hover:shadow-lg`}
-                        style={{
-                          width: `${percentage}%`,
-                        }}
+                        className={`bg-linear-to-r ${color.bar} h-2 rounded-full transition-all duration-700`}
+                        style={{ width: `${percentage}%` }}
                       />
                     </div>
                   </div>
@@ -152,28 +156,27 @@ export default function Dashboard() {
         </div>
 
         {/* ---------- DEADLINES ---------- */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-purple-100 rounded-full blur-3xl opacity-30" />
-
-          <div className="flex items-center gap-3 mb-8 relative z-10">
-            <div className="w-10 h-10 rounded-lg bg-lineat-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-lg">
-              ⏰
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center">
+              <CalendarClock size={18} className="text-violet-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-gray-900">
               Upcoming Deadlines
             </h2>
-            <span className="ml-auto bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-              {projects.length} Projects
+            <span className="ml-auto bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">
+              {summary.projects.length} Projects
             </span>
           </div>
 
-          {projects.length === 0 ? (
-            <div className="text-center py-12 relative z-10">
-              <p className="text-neutral-500 text-lg">📭 No projects yet</p>
+          {summary.projects.length === 0 ? (
+            <div className="text-center py-12">
+              <Clock size={32} className="text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">No projects yet</p>
             </div>
           ) : (
-            <div className="space-y-3 relative z-10">
-              {projects.slice(0, 5).map((p) => {
+            <div className="space-y-3 stagger-children">
+              {summary.projects.map((p) => {
                 const deadline = p.deadline ? new Date(p.deadline) : null;
                 const daysLeft = deadline
                   ? Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24))
@@ -188,32 +191,39 @@ export default function Dashboard() {
                     : null;
 
                 const urgencyStyles = {
-                  overdue:
-                    "border-red-300 bg-gradient-to-r from-red-50 to-pink-50",
-                  urgent:
-                    "border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50",
-                  normal:
-                    "border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50",
+                  overdue: "border-red-200 bg-red-50/50",
+                  urgent: "border-amber-200 bg-amber-50/50",
+                  normal: "border-gray-200 bg-gray-50/50",
+                };
+
+                const urgencyIcon = {
+                  overdue: <AlertTriangle size={16} className="text-red-500" />,
+                  urgent: <Flame size={16} className="text-amber-500" />,
+                  normal: (
+                    <CheckCircle2 size={16} className="text-emerald-500" />
+                  ),
                 };
 
                 const urgencyBadge = {
                   overdue: "bg-red-100 text-red-700",
-                  urgent: "bg-orange-100 text-orange-700",
-                  normal: "bg-blue-100 text-blue-700",
+                  urgent: "bg-amber-100 text-amber-700",
+                  normal: "bg-emerald-100 text-emerald-700",
                 };
 
                 return (
                   <div
                     key={p._id}
-                    className={`rounded-2xl px-6 py-5 flex justify-between items-center border-2 hover:shadow-lg hover:scale-105 transition transform cursor-default ${urgencyStyles[urgency] || urgencyStyles.normal}`}
+                    className={`rounded-xl px-5 py-4 flex justify-between items-center border hover:shadow-md transition-shadow ${urgencyStyles[urgency] || urgencyStyles.normal}`}
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="text-2xl mt-1">📌</div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        {urgencyIcon[urgency] || urgencyIcon.normal}
+                      </div>
                       <div>
-                        <p className="font-bold text-gray-800 text-lg">
+                        <p className="font-semibold text-gray-800 text-sm">
                           {p.title}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-0.5">
                           Project deadline
                         </p>
                       </div>
@@ -222,22 +232,22 @@ export default function Dashboard() {
                     {deadline ? (
                       <div className="flex flex-col items-end gap-1">
                         <span
-                          className={`text-xs font-bold px-3 py-1 rounded-full ${urgencyBadge[urgency]}`}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${urgencyBadge[urgency]}`}
                         >
                           {urgency === "overdue"
-                            ? "⚠️ Overdue"
+                            ? "Overdue"
                             : urgency === "urgent"
-                              ? "🔥 Urgent"
-                              : "✓ On Track"}
+                              ? "Urgent"
+                              : "On Track"}
                         </span>
-                        <span className="text-sm font-bold text-gray-700">
+                        <span className="text-xs font-medium text-gray-600">
                           {deadline.toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                           })}
                         </span>
                         {daysLeft !== null && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-[11px] text-gray-400">
                             {Math.abs(daysLeft)} day
                             {Math.abs(daysLeft) !== 1 ? "s" : ""}{" "}
                             {daysLeft < 0 ? "ago" : "left"}
@@ -245,8 +255,8 @@ export default function Dashboard() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-3 py-2 rounded-lg font-medium">
-                        No deadline set
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1.5 rounded-lg">
+                        No deadline
                       </span>
                     )}
                   </div>
@@ -260,60 +270,49 @@ export default function Dashboard() {
   );
 }
 
-/* ---------- PREMIUM STAT CARD ---------- */
+/* ---------- STAT CARD ---------- */
 
-function StatCard({ title, value, subtitle, icon, color }) {
+function StatCard({ title, value, subtitle, icon: Icon, color }) {
   const colorMap = {
     blue: {
-      bg: "from-blue-500 to-indigo-600",
-      glow: "shadow-blue-200",
-      light: "bg-blue-50",
-      border: "border-blue-200",
-      badge: "bg-blue-100 text-blue-700",
+      bg: "bg-blue-600",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      accent: "bg-blue-500",
     },
     purple: {
-      bg: "from-purple-500 to-indigo-600",
-      glow: "shadow-purple-200",
-      light: "bg-purple-50",
-      border: "border-purple-200",
-      badge: "bg-purple-100 text-purple-700",
+      bg: "bg-violet-600",
+      iconBg: "bg-violet-50",
+      iconColor: "text-violet-600",
+      accent: "bg-violet-500",
     },
     green: {
-      bg: "from-green-500 to-emerald-600",
-      glow: "shadow-green-200",
-      light: "bg-green-50",
-      border: "border-green-200",
-      badge: "bg-green-100 text-green-700",
+      bg: "bg-emerald-600",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      accent: "bg-emerald-500",
     },
   };
 
+  const c = colorMap[color];
+
   return (
-    <div
-      className={`relative overflow-hidden rounded-3xl border-2 bg-white ${colorMap[color].border} shadow-lg hover:shadow-2xl p-8 transition transform hover:scale-105 group`}
-    >
-      <div
-        className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-2xl opacity-40 ${colorMap[color].light} group-hover:opacity-60 transition`}
-      />
-      <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition" />
-
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">
-            {title}
-          </span>
-          <span className="text-3xl">{icon}</span>
-        </div>
-
-        <h2 className="text-5xl font-bold tracking-tight text-gray-900 my-3">
-          {value}
-        </h2>
-
-        <p className="text-sm text-gray-600 mb-5">{subtitle}</p>
-
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          {title}
+        </span>
         <div
-          className={`h-2 w-20 rounded-full bg-linear-to-r ${colorMap[color].bg} shadow-lg`}
-        />
+          className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center`}
+        >
+          <Icon size={20} className={c.iconColor} />
+        </div>
       </div>
+
+      <h2 className="text-3xl font-bold text-gray-900 mb-1">{value}</h2>
+      <p className="text-sm text-gray-400">{subtitle}</p>
+
+      <div className={`h-1 w-16 rounded-full ${c.accent} mt-4 opacity-60`} />
     </div>
   );
 }
