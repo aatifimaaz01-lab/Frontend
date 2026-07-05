@@ -8,6 +8,24 @@ import { usePermissions } from "../context/PermissionContext";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Briefcase } from "lucide-react";
 import Swal from "sweetalert2";
 
+const demoAccounts = [
+  {
+    label: "Super Admin",
+    email: "superadmin@demo.com",
+    password: "SuperAdmin@123",
+  },
+  {
+    label: "Admin",
+    email: "admin@demo.com",
+    password: "Admin@123",
+  },
+  {
+    label: "Employee",
+    email: "employee@demo.com",
+    password: "Employee@123",
+  },
+];
+
 export default function Login() {
   const navigate = useNavigate();
   const { refetch } = usePermissions();
@@ -37,6 +55,26 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const performLogin = async (credentials) => {
+    const res = await axios.post(`${BASE_URL}/api/auth/login`, credentials);
+
+    localStorage.setItem("token", res.data.token);
+
+    await refetch();
+
+    const permRes = await fetch(`${BASE_URL}/api/roles/my-permissions`, {
+      headers: { Authorization: `Bearer ${res.data.token}` },
+    });
+    const permData = await permRes.json();
+    const perms = permData.success ? permData.permissions : {};
+
+    if (perms.dashboard && perms.dashboard.includes("view")) {
+      navigate("/");
+    } else {
+      navigate("/profile");
+    }
+  };
+
   const login = async (e) => {
     e.preventDefault();
     setError("");
@@ -47,26 +85,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-
-      const res = await axios.post(`${BASE_URL}/api/auth/login`, form);
-
-      localStorage.setItem("token", res.data.token);
-
-      await refetch();
-
-      // Fetch permissions to decide where to navigate
-      const permRes = await fetch(`${BASE_URL}/api/roles/my-permissions`, {
-        headers: { Authorization: `Bearer ${res.data.token}` },
-      });
-      const permData = await permRes.json();
-      const perms = permData.success ? permData.permissions : {};
-
-      // Navigate based on permissions
-      if (perms.dashboard && perms.dashboard.includes("view")) {
-        navigate("/");
-      } else {
-        navigate("/profile");
-      }
+      await performLogin(form);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -75,6 +94,58 @@ export default function Login() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loginAsDemoUser = async (account) => {
+    setError("");
+
+    try {
+      setLoading(true);
+      setForm({ email: account.email, password: account.password });
+      await performLogin({ email: account.email, password: account.password });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.msg ||
+          `Unable to sign in as ${account.label}`,
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDemoLoginDialog = async () => {
+    const result = await Swal.fire({
+      title: "Choose demo account",
+      text: "Select one of the demo roles to sign in instantly.",
+      input: "radio",
+      inputOptions: demoAccounts.reduce((options, account) => {
+        options[account.label] = account.label;
+        return options;
+      }, {}),
+      inputValidator: (value) => {
+        if (!value) {
+          return "Please select an account";
+        }
+        return undefined;
+      },
+      showCancelButton: true,
+      confirmButtonText: "Sign in",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#2563eb",
+    });
+
+    if (!result.isConfirmed || !result.value) {
+      return;
+    }
+
+    const selectedAccount = demoAccounts.find(
+      (account) => account.label === result.value,
+    );
+
+    if (selectedAccount) {
+      await loginAsDemoUser(selectedAccount);
     }
   };
 
@@ -182,6 +253,21 @@ export default function Login() {
                   </>
                 )}
               </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={openDemoLoginDialog}
+                className="w-full border border-dashed border-blue-300 bg-blue-50 text-blue-700 py-3 rounded-xl hover:bg-blue-100 hover:border-blue-400 transition-all font-semibold disabled:opacity-60 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 text-sm"
+              >
+                Demo Sign In
+              </button>
+
+              {/* <div className="pt-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 mb-3">
+                  Demo accounts available in the dialog above
+                </p>
+              </div> */}
             </form>
           </div>
         </div>
