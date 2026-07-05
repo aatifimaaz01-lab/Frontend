@@ -1,7 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useEffect, useState } from "react";
-import { Menu, X, ArrowLeft } from "lucide-react";
+import axios from "../utils/axios";
+import Swal from "sweetalert2";
+import { BASE_URL } from "../config";
+import { Menu, X, ArrowLeft, LogOut } from "lucide-react";
 
 export default function PageLayout({ title, children, showBackButton }) {
   const navigate = useNavigate();
@@ -26,6 +29,48 @@ export default function PageLayout({ title, children, showBackButton }) {
     location.pathname.startsWith(path),
   );
 
+  const logout = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out of your account",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem("token");
+
+          if (token) {
+            await axios.post(
+              `${BASE_URL}/api/attendance/checkout`,
+              {},
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            );
+          }
+        } catch {
+          // ignore error
+        }
+
+        localStorage.clear();
+        navigate("/login");
+
+        Swal.fire({
+          title: "Logged out!",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
+  };
+
   return (
     <div className="flex h-screen bg-gray-50/80 overflow-hidden">
       {!hideSidebar && <Sidebar open={open} setOpen={setOpen} />}
@@ -40,7 +85,14 @@ export default function PageLayout({ title, children, showBackButton }) {
               {open ? <X size={22} /> : <Menu size={22} />}
             </button>
             <h1 className="font-semibold text-base text-gray-900">{title}</h1>
-            <div className="w-10" />
+            <button
+              onClick={logout}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
+              aria-label="Logout"
+              title="Logout"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         )}
 
