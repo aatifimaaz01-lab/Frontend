@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import { Mail, ArrowRight, Loader2 } from "lucide-react";

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import Swal from "sweetalert2";
@@ -182,7 +182,7 @@ export default function Reports() {
   }, [reportId, token]);
 
   return (
-    <PageLayout title="Reports">
+    <PageLayout title="Reports" showBackButton>
       <div className="space-y-8">
         {/* FORM SECTION */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

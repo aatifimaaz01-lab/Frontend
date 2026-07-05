@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import {
@@ -108,11 +108,39 @@ export default function AdminLogs() {
     const code = Number(status);
 
     if (code >= 200 && code < 300) return "text-green-700 bg-green-100";
+    if (code >= 300 && code < 400) return "text-blue-700 bg-blue-100";
     if (code >= 400 && code < 500) return "text-yellow-700 bg-yellow-100";
     if (code >= 500) return "text-red-700 bg-red-100";
 
     return "text-gray-500 bg-gray-100";
   };
+
+  /* ================= STATUS TEXT ================= */
+  // const getStatusText = (status) => {
+  //   const code = Number(status);
+  //   const texts = {
+  //     200: "OK",
+  //     201: "Created",
+  //     204: "No Content",
+  //     301: "Moved",
+  //     302: "Found",
+  //     304: "Not Modified",
+  //     400: "Bad Request",
+  //     401: "Unauthorized",
+  //     403: "Forbidden",
+  //     404: "Not Found",
+  //     405: "Not Allowed",
+  //     408: "Timeout",
+  //     409: "Conflict",
+  //     422: "Unprocessable",
+  //     429: "Too Many",
+  //     500: "Server Error",
+  //     502: "Bad Gateway",
+  //     503: "Unavailable",
+  //     504: "Gateway Timeout",
+  //   };
+  //   return texts[code] || "";
+  // };
 
   /* ================= TYPE COLOR ================= */
   const getTypeColor = (type) => {
@@ -131,7 +159,7 @@ export default function AdminLogs() {
   };
 
   return (
-    <PageLayout title="System Logs">
+    <PageLayout title="System Logs" showBackButton>
       <div className="w-full bg-white shadow-sm rounded-2xl border border-gray-100 overflow-hidden h-[calc(100vh-4rem)] flex flex-col">
         {/* ================= FILTER BAR ================= */}
         <div className="p-4 border-b border-gray-100 grid md:grid-cols-5 gap-3 sticky top-0 bg-white z-20">
@@ -193,7 +221,7 @@ export default function AdminLogs() {
 
           {!loading && logs.length > 0 && (
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider sticky top-0 z-10">
+              <thead className="bg-gray-50 text-gray-500 text-[11px] uppercase tracking-wider sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">Time</th>
                   <th className="px-4 py-3 text-left font-semibold">Type</th>
@@ -240,11 +268,15 @@ export default function AdminLogs() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${getStatusColor(meta.status)}`}
-                        >
-                          {meta.status || "-"}
-                        </span>
+                        {meta.status ? (
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${getStatusColor(meta.status)}`}
+                          >
+                            {meta.status}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-[11px]">-</span>
+                        )}
                       </td>
                     </tr>
                   );

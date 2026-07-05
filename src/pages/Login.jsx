@@ -1,15 +1,28 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import axios from "../utils/axios";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
-import { getRoleFromToken } from "../utils/jwt";
+// import { getRoleFromToken } from "../utils/jwt";
 import { usePermissions } from "../context/PermissionContext";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Briefcase } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function Login() {
   const navigate = useNavigate();
   const { refetch } = usePermissions();
+
+  useEffect(() => {
+    if (localStorage.getItem("invalidToken")) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "warning",
+        confirmButtonColor: "#2563eb",
+      });
+      localStorage.removeItem("invalidToken");
+    }
+  }, []);
 
   const [form, setForm] = useState({
     email: "",

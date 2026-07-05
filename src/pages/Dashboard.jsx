@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import {
@@ -14,6 +14,11 @@ import {
   CalendarClock,
   TrendingUp,
 } from "lucide-react";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5200", {
+  transports: ["websocket"],
+});
 
 export default function Dashboard() {
   const [summary, setSummary] = useState({
@@ -24,7 +29,7 @@ export default function Dashboard() {
     projects: [],
   });
 
-  useEffect(() => {
+  const fetchDashboardData = () => {
     const token = localStorage.getItem("token");
     axios
       .get(`${BASE_URL}/api/dashboard/summary`, {
@@ -34,6 +39,29 @@ export default function Dashboard() {
         if (res.data.success) setSummary(res.data.data);
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    socket.on("dashboard_updated", () => {
+      fetchDashboardData(); // your API call
+    });
+
+    return () => {
+      socket.off("dashboard_updated");
+    };
+  }, []);
+
+  useEffect(() => {
+    // const token = localStorage.getItem("token");
+    // axios
+    //   .get(`${BASE_URL}/api/dashboard/summary`, {
+    //     headers: { Authorization: `Bearer ${token}` },
+    //   })
+    //   .then((res) => {
+    //     if (res.data.success) setSummary(res.data.data);
+    //   })
+    //   .catch(() => {});
+    fetchDashboardData();
   }, []);
 
   const deptData = Object.entries(summary.departments);

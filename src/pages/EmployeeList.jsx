@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { io } from "socket.io-client";
+import axios from "../utils/axios";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
@@ -15,7 +16,6 @@ import {
   Trash2,
   FileText,
   X,
-  ArrowLeft,
   Mail,
   Phone,
   Building2,
@@ -25,6 +25,10 @@ import {
   Download,
   UserX,
 } from "lucide-react";
+
+const socket = io("http://localhost:5200", {
+  transports: ["websocket"],
+});
 
 export default function EmployeeList() {
   const { permissions } = usePermissions();
@@ -91,6 +95,30 @@ export default function EmployeeList() {
     fetchEmployees();
   }, []);
 
+  useEffect(() => {
+    socket.on("employee_created", (newEmployee) => {
+      setEmployees((prev) => [newEmployee, ...prev]);
+    });
+
+    socket.on("employee_updated", (updatedEmployee) => {
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp._id === updatedEmployee._id ? updatedEmployee : emp,
+        ),
+      );
+    });
+
+    socket.on("employee_deleted", (id) => {
+      setEmployees((prev) => prev.filter((emp) => emp._id !== id));
+    });
+
+    return () => {
+      socket.off("employee_created");
+      socket.off("employee_updated");
+      socket.off("employee_deleted");
+    };
+  }, []);
+
   const deleteEmployee = async (id) => {
     const result = await Swal.fire({
       title: "Delete employee?",
@@ -116,7 +144,7 @@ export default function EmployeeList() {
       });
 
       Swal.fire("Deleted!", "Employee deleted successfully", "success");
-      fetchEmployees();
+      // fetchEmployees();
       setSelectedEmployee(null);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to delete employee";
@@ -129,16 +157,9 @@ export default function EmployeeList() {
   );
 
   return (
-    <PageLayout title="Employees">
+    <PageLayout title="Employees" showBackButton>
       {/* HEADER */}
-      <div className="flex flex-col gap-5 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-fit flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
-
+      <div className="flex flex-col gap-5 mb-6 shrink-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="relative flex-1 md:flex-none md:w-96">
             <Search
@@ -165,10 +186,10 @@ export default function EmployeeList() {
       </div>
 
       {/* TABLE */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="hidden md:flex flex-col min-h-0 flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
+            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100 sticky top-0 z-10">
               <tr>
                 <th className="text-left py-4 px-6 font-semibold uppercase tracking-wider text-xs">
                   Employee
@@ -263,7 +284,7 @@ export default function EmployeeList() {
         )}
       </div>
       {/* MOBILE CARDS */}
-      <div className="md:hidden space-y-3 stagger-children">
+      <div className="md:hidden space-y-3 stagger-children overflow-y-auto flex-1 min-h-0">
         {filtered.map((emp) => (
           <div
             key={emp._id}
@@ -516,7 +537,7 @@ export default function EmployeeList() {
                       "success",
                     );
                     setShowAdd(false);
-                    fetchEmployees();
+                    // fetchEmployees();
                   } catch (err) {
                     Swal.fire(
                       "Error",
@@ -590,7 +611,7 @@ export default function EmployeeList() {
                     );
                     setShowEdit(false);
                     setEditEmployee(null);
-                    fetchEmployees();
+                    // fetchEmployees();
                   } catch (err) {
                     Swal.fire(
                       "Error",

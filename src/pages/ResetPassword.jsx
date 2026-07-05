@@ -1,9 +1,35 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import { Lock, Check, X as XIcon } from "lucide-react";
+
+// Helper to resend reset link
+function ResendLink({ onResend, loading, resent }) {
+  const [email, setEmail] = useState("");
+  return (
+    <div className="mt-6 text-center">
+      <p className="mb-2 text-sm text-gray-500">
+        Enter your email to resend the reset link:
+      </p>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="name@company.com"
+        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all mb-2"
+      />
+      <button
+        onClick={() => onResend(email)}
+        disabled={loading || !email}
+        className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition font-semibold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {loading ? "Resending..." : resent ? "Link Sent!" : "Resend Link"}
+      </button>
+    </div>
+  );
+}
 
 const rules = [
   { label: "At least 8 characters", test: (p) => p.length >= 8 },
@@ -24,6 +50,9 @@ export default function ResetPassword() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resent, setResent] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,11 +85,36 @@ export default function ResetPassword() {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(
+      const msg =
         err.response?.data?.message ||
-          err.response?.data?.msg ||
-          "Reset link expired or invalid",
+        err.response?.data?.msg ||
+        "Reset link expired or invalid";
+      setError(msg);
+      // If error is about expiry, show resend option
+      if (
+        msg.toLowerCase().includes("expired") ||
+        msg.toLowerCase().includes("invalid")
+      ) {
+        setShowResend(true);
+      }
+    }
+  };
+
+  // Handler for resending link
+  const handleResend = async (email) => {
+    setResendLoading(true);
+    setResent(false);
+    try {
+      await axios.post(`${BASE_URL}/api/auth/forgot-password`, { email });
+      setResent(true);
+    } catch (e) {
+      setError(
+        e.response?.data?.message ||
+          e.response?.data?.msg ||
+          "Failed to resend link",
       );
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -79,73 +133,86 @@ export default function ResetPassword() {
             Enter your new password below
           </p>
 
-          <form onSubmit={submit} className="space-y-4">
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="New Password"
-                value={form.password}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
-              />
-            </div>
-
-            {form.password && (
-              <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
-                {rules.map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 text-xs ${r.test(form.password) ? "text-emerald-600" : "text-gray-400"}`}
-                  >
-                    {r.test(form.password) ? (
-                      <Check size={14} />
-                    ) : (
-                      <XIcon size={14} />
-                    )}
-                    {r.label}
-                  </div>
-                ))}
+          {showResend ? (
+            <>
+              <div className="bg-red-50 text-red-500 text-xs text-center px-3 py-2 rounded-lg mb-4">
+                This link has expired or is invalid.
               </div>
-            )}
-
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              <ResendLink
+                onResend={handleResend}
+                loading={resendLoading}
+                resent={resent}
               />
-              <input
-                type="password"
-                name="confirm"
-                placeholder="Confirm Password"
-                value={form.confirm}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 text-red-500 text-xs text-center px-3 py-2 rounded-lg">
-                {error}
+            </>
+          ) : (
+            <form onSubmit={submit} className="space-y-4">
+              <div className="relative">
+                <Lock
+                  size={16}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="New Password"
+                  value={form.password}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+                />
               </div>
-            )}
-            {success && (
-              <div className="bg-green-50 text-green-600 text-xs text-center px-3 py-2 rounded-lg">
-                {success}
-              </div>
-            )}
 
-            <button
-              type="submit"
-              className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition font-semibold text-sm"
-            >
-              Update Password
-            </button>
-          </form>
+              {form.password && (
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
+                  {rules.map((r, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-2 text-xs ${r.test(form.password) ? "text-emerald-600" : "text-gray-400"}`}
+                    >
+                      {r.test(form.password) ? (
+                        <Check size={14} />
+                      ) : (
+                        <XIcon size={14} />
+                      )}
+                      {r.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative">
+                <Lock
+                  size={16}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="password"
+                  name="confirm"
+                  placeholder="Confirm Password"
+                  value={form.confirm}
+                  onChange={handleChange}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 text-red-500 text-xs text-center px-3 py-2 rounded-lg">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="bg-green-50 text-green-600 text-xs text-center px-3 py-2 rounded-lg">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition font-semibold text-sm"
+              >
+                Update Password
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </PageLayout>

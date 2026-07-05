@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BASE_URL } from "../config";
 import PageLayout from "../components/PageLayout";
 import Swal from "sweetalert2";
-import { ArrowLeft, Plus, Pencil, Trash2, Shield, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Loader2 } from "lucide-react";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
@@ -187,7 +187,7 @@ export default function RoleManagement() {
   /* ─── Render ─── */
   if (loading) {
     return (
-      <PageLayout title="Role Management">
+      <PageLayout title="Role Management" showBackButton>
         <div className="flex justify-center items-center h-64">
           <Loader2 size={24} className="animate-spin text-blue-600" />
         </div>
@@ -205,15 +205,9 @@ export default function RoleManagement() {
             ? "Create Role"
             : `Edit Role – ${editingRole.name}`
         }
+        showBackButton
       >
         <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => setEditingRole(null)}
-            className="mb-4 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors font-medium"
-          >
-            <ArrowLeft size={16} /> Back to roles
-          </button>
-
           {/* Role Name */}
           <div className="mb-6">
             <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">
@@ -322,7 +316,7 @@ export default function RoleManagement() {
 
   // ── List View ──
   return (
-    <PageLayout title="Role Management">
+    <PageLayout title="Role Management" showBackButton>
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <p className="text-gray-400 text-xs">

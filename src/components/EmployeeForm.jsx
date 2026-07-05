@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../utils/axios";
 import { BASE_URL } from "../config";
 import { ArrowLeft, Plus, X, Upload, Loader2 } from "lucide-react";
 

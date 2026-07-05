@@ -1,3 +1,5 @@
+import Customers from "./pages/Customers";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import EmployeeList from "./pages/EmployeeList";
@@ -25,6 +27,14 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected routes */}
+        <Route
+          path="/customers"
+          element={
+            <ProtectedRoute>
+              <Customers />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/"
           element={

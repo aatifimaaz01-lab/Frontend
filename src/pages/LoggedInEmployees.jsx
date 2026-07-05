@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import PageLayout from "../components/PageLayout";
 import { BASE_URL } from "../config";
 import { useNavigate } from "react-router-dom";
@@ -92,7 +92,7 @@ export default function LoggedInEmployees() {
 
   if (loading) {
     return (
-      <PageLayout title="Employee Status">
+      <PageLayout title="Employee Status" showBackButton>
         <div className="flex items-center justify-center gap-2 p-10 text-gray-400">
           <Loader2 size={20} className="animate-spin" />
           <span className="text-sm">Loading...</span>
@@ -102,7 +102,7 @@ export default function LoggedInEmployees() {
   }
 
   return (
-    <PageLayout title="Employee Status">
+    <PageLayout title="Employee Status" showBackButton>
       <div className="p-4 md:p-6 min-h-screen">
         <div className="grid md:grid-cols-3 gap-6">
           <StatusColumn

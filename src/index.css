@@ -190,3 +190,59 @@ body {
 .compact-popup .swal2-popup {
   gap: 2px !important;
 }
+
+/* ===== Responsive SweetAlert2 ===== */
+@media (max-width: 640px) {
+  .swal2-popup {
+    width: 85vw !important;
+    max-width: 320px !important;
+    padding: 1rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  .swal2-popup .swal2-title {
+    font-size: 1.1rem !important;
+  }
+  .swal2-popup .swal2-html-container {
+    font-size: 0.8rem !important;
+  }
+  .swal2-popup .swal2-icon {
+    width: 3rem !important;
+    height: 3rem !important;
+    margin: 0.5rem auto !important;
+  }
+  .swal2-popup .swal2-icon .swal2-icon-content {
+    font-size: 2rem !important;
+  }
+  .swal2-popup .swal2-actions {
+    gap: 0.5rem !important;
+  }
+  .swal2-popup .swal2-actions button {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 1rem !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .swal2-popup {
+    width: 92vw !important;
+    max-width: 280px !important;
+    padding: 0.75rem 0.5rem !important;
+  }
+  .swal2-popup .swal2-title {
+    font-size: 1rem !important;
+  }
+  .swal2-popup .swal2-html-container {
+    font-size: 0.75rem !important;
+  }
+  .swal2-popup .swal2-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+  .swal2-popup .swal2-icon .swal2-icon-content {
+    font-size: 1.5rem !important;
+  }
+  .swal2-popup .swal2-actions button {
+    font-size: 0.75rem !important;
+    padding: 0.35rem 0.75rem !important;
+  }
+}

@@ -1,9 +1,10 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowLeft } from "lucide-react";
 
-export default function PageLayout({ title, children }) {
+export default function PageLayout({ title, children, showBackButton }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(() => {
     const saved = localStorage.getItem("sidebarOpen");
@@ -44,7 +45,17 @@ export default function PageLayout({ title, children }) {
         )}
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 transition-all duration-300">
-          <div className="max-w-7xl mx-auto animate-fadeIn">{children}</div>
+          <div className="max-w-7xl mx-auto animate-fadeIn flex flex-col h-full">
+            {showBackButton && (
+              <button
+                onClick={() => navigate(-1)}
+                className="mb-4 flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                <ArrowLeft size={16} /> Back
+              </button>
+            )}
+            {children}
+          </div>
         </main>
       </div>
     </div>

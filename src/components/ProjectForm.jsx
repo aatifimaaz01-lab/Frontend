@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../utils/axios";
 import { BASE_URL } from "../config";
 import Swal from "sweetalert2";
 import { X, Loader2 } from "lucide-react";
@@ -10,12 +10,14 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
     description: "",
     deadline: "",
     members: [],
+    customer: "",
   });
   const [loading, setLoading] = useState(false);
 
   const [employees, setEmployees] = useState([]);
+  const [customers, setCustomers] = useState([]);
 
-  /* LOAD EMPLOYEES */
+  // LOAD EMPLOYEES
   useEffect(() => {
     axios
       .get(`${BASE_URL}/api/employees/view`, {
@@ -31,6 +33,21 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
           "error",
         ),
       );
+    // LOAD CUSTOMERS
+    axios
+      .get(`${BASE_URL}/api/customers`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => setCustomers(res.data))
+      .catch((err) =>
+        Swal.fire(
+          "Error",
+          err.response?.data?.message || "Failed to load companies",
+          "error",
+        ),
+      );
   }, []);
 
   /* PREFILL EDIT DATA (runs only once when modal opens) */
@@ -41,6 +58,7 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
         description: initialData.description || "",
         deadline: initialData.deadline?.slice(0, 10) || "",
         members: initialData.members?.map((m) => String(m._id)) || [],
+        customer: initialData.customer?._id || initialData.customer || "",
       });
     }
   }, [initialData]);
@@ -118,6 +136,29 @@ export default function ProjectForm({ onSubmit, initialData = {} }) {
           className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
           placeholder="Project details..."
         />
+      </div>
+
+      {/* COMPANY (CUSTOMER) */}
+      <div>
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Company (Customer)
+        </label>
+        <select
+          name="customer"
+          value={form.customer}
+          onChange={handleChange}
+          required
+          className="w-full mt-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all"
+        >
+          <option value="" disabled>
+            Select company...
+          </option>
+          {customers.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* DEADLINE */}
